@@ -3,5 +3,6 @@ To achieve the forward-looking prediction, features are created based on data sa
 The data is also made stationary by first-order differencing.
 The predicted attenuation is used to pre-compensate the original signal to reduce the distortions in the signal.
 
-The Rytov_variance quantifies the distortion present in the signal by fitting the signal's distribution against known distributions (gamma-gamma and log-normal).
+The Rytov variance quantifies the distortion present in the signal by fitting the signal's distribution against known distributions (gamma-gamma and log-normal).
 This enables the determination of the Rytov value that minimizes the fitting.
+'rytov_vs_latency.m' determines the Rytov variance of pre-compensated data across different latency values.
