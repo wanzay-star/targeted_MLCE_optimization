@@ -43,19 +43,31 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 
 # Data parameters
-DATA_DIR = './data/'
-DATASET_FILE = 'lin_wan5_mod_turb_samps.mat'  # Options: lin_wan5_mod_turb_samps.mat, 
-                                               #          lin_wan5_strong_turb_samps.mat,
-                                               #          lin_wan5_weak_turb_samps.mat
-DATASET_VAR = 'lin_wan5_m_dat'  # Variable name in .mat file
-DATASET_NAME = 'Moderate Turbulence'
+
+datapath = r'C:\Users\wanzay\OneDrive - Universidade de Aveiro\Desktop\Course module Materials\Marco NN\NN-FSO\NN-FSO REP\ML_Channel_Estimation\data'
+DATA_DIR = datapath #'./data/'
+# Options: lin_wan5_mod_turb_samps.mat, 
+#          lin_wan5_strong_turb_samps.mat,
+#          lin_wan5_weak_turb_samps.mat
+
+DATASET_FILE = 'lin_wan5_strong_turb_samps.mat'                                                
+DATASET_VAR = 'lin_wan5_s_dat'  # Variable name in .mat file
+DATASET_NAME = 'Strong Turbulence'
+
+# DATASET_FILE = 'lin_wan5_mod_turb_samps.mat'                                                
+# DATASET_VAR = 'lin_wan5_m_dat'  # Variable name in .mat file
+# DATASET_NAME = 'Moderate Turbulence'
+
+# DATASET_FILE = 'lin_wan5_weak_turb_samps.mat'                                                
+# DATASET_VAR = 'lin_wan5_w_dat'  # Variable name in .mat file
+# DATASET_NAME = 'Weak Turbulence'
 
 # Signal parameters
 FS_MEAS = 1e4  # Measurement sampling frequency (10 kHz)
 FS = FS_MEAS / 1  # Processing sampling frequency
 
 # Model parameters
-LATENCY = 20  # Prediction horizon in samples (can be list: [1, 5, 10, 15, 20, 25, 30, 35, 40, 50])
+LATENCY = [1, 5] #20  # Prediction horizon in samples (can be list: [1, 5, 10, 15, 20, 25, 30, 35, 40, 50])
 N_TAPS = 10   # Filter memory length / number of lagged features
 
 # Training parameters
@@ -68,7 +80,7 @@ XGB_N_ESTIMATORS = 100
 CB_ITERATIONS = 100
 
 # Visualization
-VISUAL_DEBUG = False
+VISUAL_DEBUG = True
 OUTPUT_DIR = './output/'
 
 # ============================================================================
@@ -194,12 +206,14 @@ def train_and_evaluate_models(df_train, df_test, latency, n_taps, use_differenti
     # Train LMS
     lock_coeff = False
     weights = None
-    y_tr, err_tr, wts_tr = my_pyt_lms(X_train, y_train, latency, n_taps, weights, lock_coeff)
+    # y_tr, err_tr, wts_tr = my_pyt_lms(X_train, y_train, latency, n_taps, weights, lock_coeff)
+    y_tr, err_tr, wts_tr = my_pyt_lms(X_train, y_train, n_taps, weights, lock_coeff)
     
     # Test LMS with locked coefficients
     lock_coeff = True
     wts = wts_tr[-1, :]  # Use the last, most updated weights
-    yt, e, wts_final = my_pyt_lms(X_test, None, latency, n_taps, wts, lock_coeff)
+    # yt, e, wts_final = my_pyt_lms(X_test, None, latency, n_taps, wts, lock_coeff)
+    yt, e, wts_final = my_pyt_lms(X_test, None, n_taps, wts, lock_coeff)
     
     # Convert predictions to original scale
     if use_differential:
@@ -344,9 +358,12 @@ def calculate_rytov_metrics(results, latency):
     rytov_results['zoh'] = rytov_vs_latency(db2pow(precom_zoh))
     rytov_results['input'] = rytov_vs_latency(db2pow(y_true))
     
-    print(f"    Input Rytov variance: {rytov_results['input']:.6f}")
+    # print(f"    Input Rytov variance: {rytov_results['input']:.6f}")
+    print(f"    Input Rytov variance: {rytov_results['input'][0]:.6f}")
+
     for model_name in ['lms', 'lr', 'rf', 'xgb', 'cb', 'zoh']:
-        print(f"    {model_name.upper():6s} Rytov variance: {rytov_results[model_name]:.6f}")
+        # print(f"    {model_name.upper():6s} Rytov variance: {rytov_results[model_name]:.6f}")
+        print(f"    {model_name.upper():6s} Rytov variance: {rytov_results[model_name][0]:.6f}")
     
     return rytov_results
 
@@ -424,8 +441,8 @@ def plot_results(all_results, latency_values, dataset_name):
     plt.plot(latency_ms, rytov_input, '--', linewidth=2, label='Input Variance')
     
     # Plot model Rytov variances (only selected models)
-    selected_models = ['lms', 'lr', 'zoh']  # Match MATLAB script
-    for model in selected_models:
+    # selected_models = ['lms', 'lr', 'zoh']  # Match MATLAB script
+    for model in models:
         plt.plot(latency_ms, rytov_data[model], markers[model],
                 linewidth=1.5, markersize=6, label=model_labels[model])
     
@@ -565,3 +582,13 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+# To Do:
+# in the next iteration by Artermis optimizer...
+# Include the option to specify the number of datapoints to load from the .mat file
+# Include the option to specify train/test split ratio, as well as validity set.
+# Enable inclusion or exclusion of features, e.g., moving average, moving std, spectral features, etc.
